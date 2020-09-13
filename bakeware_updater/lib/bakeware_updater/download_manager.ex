@@ -93,7 +93,8 @@ defmodule BakewareUpdater.DownloadManager do
     |> case do
       %{status: :download_complete} = state ->
         Mint.HTTP.close(state.conn)
-        {:noreply, state, {:continue, :apply}}
+        send state.caller, {__MODULE__, :complete, state.file_name}
+        {:noreply, state}
 
       state ->
         {:noreply, state}
@@ -118,8 +119,6 @@ defmodule BakewareUpdater.DownloadManager do
   defp process_response({:done, ref}, %{request_ref: ref} = state) do
     Logger.info("[UpdateManager] - download complete")
     File.close(state.fd)
-
-    send state.caller, {__MODULE__, :complete, state.file_name}
     %{state | status: :download_complete}
   end
 end
